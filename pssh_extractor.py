@@ -4,102 +4,123 @@ import base64
 import struct
 import uuid
 import logging
-from typing import Tuple
-
+from typing import Optional
+from dataclasses import dataclass
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
-# Constants for PSSH box parsing
-PSSH_MARKER = b'pssh'
-WIDEVINE_SYSTEM_ID = uuid.UUID('edef8ba9-79d6-4ace-a3c8-27dcd51d21ed')
-PLAYREADY_SYSTEM_ID = uuid.UUID('9a04f079-9840-4286-ab92-e65be0885f95')
+class DRMSystemID:
+    WIDEVINE = uuid.UUID('edef8ba9-79d6-4ace-a3c8-27dcd51d21ed')
+    PLAYREADY = uuid.UUID('9a04f079-9840-4286-ab92-e65be0885f95')
+    FAIRPLAY = uuid.UUID('94ce86fb-07bb-4b43-adb8-93d2fa968ca2')
 
+@dataclass
+class PSSH:
+    widevine: Optional[bytes] = None
+    playready: Optional[bytes] = None
 
-def extract_pssh(init_segment: bytes) -> Tuple[bytes, bytes]:
-    """Extracts PSSH boxes from the given init segment.  
+    @classmethod
+    def parse(cls, file_path: str | Path) -> 'PSSH':
+        """Parse PSSH boxes from an init segment file.
 
-    Args:
-        init_segment (bytes): The raw bytes of the init segment.
+        Args:
+            file_path: Path to the init segment file.
 
-    Returns:
-        Tuple[bytes, bytes]: A tuple containing the base64 encoded Widevine and PlayReady PSSH boxes.
-    """
-    widevine_pssh = None
-    playready_pssh = None
+        Returns:
+            PSSH object containing the extracted boxes.
+        """
+        with open(file_path, 'rb') as f:
+            init_segment = f.read()
+        return cls.from_bytes(init_segment)
 
-    # Search through the file content
-    offset = 0
-    while offset < len(init_segment):
-        # Look for the 'pssh' marker
-        marker_pos = init_segment.find(PSSH_MARKER, offset)
+    @classmethod
+    def from_bytes(cls, init_segment: bytes) -> 'PSSH':
+        """Extract PSSH boxes from raw bytes.
+
+        Args:
+            init_segment: Raw bytes containing PSSH boxes.
+
+        Returns:
+            PSSH object containing the extracted boxes.
+        """
+        widevine_pssh = None
+        playready_pssh = None
+        
+        offset = 0
+        while offset < len(init_segment):
+            pssh_box = cls._find_next_pssh_box(init_segment, offset)
+            if not pssh_box:
+                break
+
+            system_id = cls._get_system_id(pssh_box)
+            if system_id == DRMSystemID.WIDEVINE:
+                widevine_pssh = pssh_box
+            elif system_id == DRMSystemID.PLAYREADY:
+                playready_pssh = pssh_box
+
+            offset = init_segment.find(pssh_box) + len(pssh_box)
+
+        return cls(widevine_pssh, playready_pssh)
+
+    def get_widevine_b64(self) -> Optional[str]:
+        """Get base64 encoded Widevine PSSH box."""
+        return base64.b64encode(self.widevine).decode('utf-8') if self.widevine else None
+
+    def get_playready_b64(self) -> Optional[str]:
+        """Get base64 encoded PlayReady PSSH box."""
+        return base64.b64encode(self.playready).decode('utf-8') if self.playready else None
+
+    @staticmethod
+    def _find_next_pssh_box(data: bytes, offset: int) -> Optional[bytes]:
+        """Find and extract the next PSSH box in the data."""
+        marker_pos = data.find(b'pssh', offset)
         if marker_pos == -1:
-            break
+            return None
 
-        # Go back 4 bytes and extract get the size (4 bytes big-endian)
         size_pos = marker_pos - 4
         if size_pos < 0:
-            offset = marker_pos + 4
-            continue
+            return None
 
-        size_bytes = init_segment[size_pos:marker_pos]
+        size_bytes = data[size_pos:marker_pos]
         box_size = struct.unpack('>I', size_bytes)[0]
-
-        # Extract the entire PSSH box
         box_end = size_pos + box_size
-        if box_end > len(init_segment):
-            offset = marker_pos + 4
-            continue
 
-        pssh_box = init_segment[size_pos:box_end]
+        if box_end > len(data):
+            return None
 
-        # Extract the system ID (16 bytes after the flags bytes)
-        # PSSH structure: size(4) + type(4) + version(1) + flags(3) + systemID(16) + ...
-        if len(pssh_box) < 28:  # 4 + 4 + 1 + 3 + 16
-            offset = marker_pos + 4
-            continue
+        pssh_box = data[size_pos:box_end]
+        if len(pssh_box) < 28:  # Minimum PSSH box size
+            return None
 
+        return pssh_box
+
+    @staticmethod
+    def _get_system_id(pssh_box: bytes) -> uuid.UUID:
+        """Extract system ID from PSSH box."""
         system_id_bytes = pssh_box[12:28]
-        system_id = uuid.UUID(bytes=system_id_bytes)
-
-        # Identify the DRM system and store the base64 encoded box
-        if system_id == WIDEVINE_SYSTEM_ID:
-            widevine_pssh = pssh_box
-        elif system_id == PLAYREADY_SYSTEM_ID:
-            playready_pssh = pssh_box
-
-        # Move past this box
-        offset = box_end
-
-    return widevine_pssh, playready_pssh
+        return uuid.UUID(bytes=system_id_bytes)
 
 
 def main():
     import sys
     if len(sys.argv) != 2:
-        logger.error(
-            "Usage: python3 pssh_extractor.py <init_segment_file_path>")
+        logger.error("Usage: python3 pssh_extractor.py <init_segment_file_path>")
         sys.exit(1)
 
-    file_path = sys.argv[1]
-    with open(file_path, 'rb') as f:
-        init_segment = f.read()
-
-    widevine_pssh, playready_pssh = extract_pssh(init_segment)
+    pssh = PSSH.parse(sys.argv[1])
+    print(type(pssh))
 
     logger.info("Extracted PSSH Data:")
     logger.info("--------------------")
-    if widevine_pssh:
-        logger.info(
-            f"Widevine PSSH: {base64.b64encode(widevine_pssh).decode('utf-8')}")
-    else:
-        logger.info("No Widevine PSSH found")
+    
+    widevine_b64 = pssh.get_widevine_b64()
+    logger.info(f"Widevine PSSH: {widevine_b64}" if widevine_b64 else "No Widevine PSSH found")
     logger.info("")
-    if playready_pssh:
-        logger.info(
-            f"PlayReady PSSH: {base64.b64encode(playready_pssh).decode('utf-8')}")
-    else:
-        logger.info("No PlayReady PSSH found")
+    
+    playready_b64 = pssh.get_playready_b64()
+    logger.info(f"PlayReady PSSH: {playready_b64}" if playready_b64 else "No PlayReady PSSH found")
 
 
 if __name__ == "__main__":

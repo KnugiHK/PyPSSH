@@ -74,7 +74,14 @@ def extract_pssh(init_segment: bytes) -> Tuple[bytes, bytes]:
     return widevine_pssh, playready_pssh
 
 
-def main(file_path):
+def main():
+    import sys
+    if len(sys.argv) != 2:
+        logger.error(
+            "Usage: python3 pssh_extractor.py <init_segment_file_path>")
+        sys.exit(1)
+
+    file_path = sys.argv[1]
     with open(file_path, 'rb') as f:
         init_segment = f.read()
 
@@ -96,11 +103,4 @@ def main(file_path):
 
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) != 2:
-        logger.error(
-            "Usage: python3 pssh_extractor.py <init_segment_file_path>")
-        sys.exit(1)
-
-    file_path = sys.argv[1]
-    main(file_path)
+    main()

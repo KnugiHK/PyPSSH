@@ -1,4 +1,5 @@
-import sys
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import base64
 import struct
 import uuid
@@ -95,6 +96,7 @@ def main(file_path):
 
 
 if __name__ == "__main__":
+    import sys
     if len(sys.argv) != 2:
         logger.error(
             "Usage: python3 pssh_extractor.py <init_segment_file_path>")

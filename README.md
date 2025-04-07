@@ -8,7 +8,7 @@
 
 ### 🛡️ DRM and Copyright Compliance
 
-**PyPSSH** may interact with DRM-protected content and is intended for diagnostic, research, and security testing purposes. It does not provide tools to bypass DRM protections but helps in identifying and handling DRM information in media files. Users are responsible for ensuring their use complies with applicable laws, including DRM and copyright regulations, and should not use **PyPSSH** for circumventing DRM protections or infringing on intellectual property rights.
+**PyPSSH** may interact with DRM-protected content and is intended for diagnostic, research, and security testing purposes. It does _not_ provide tools to bypass DRM protections but helps in identifying and handling DRM information in media files. Users are responsible for ensuring their use complies with applicable laws, including DRM and copyright regulations, and should _not_ use **PyPSSH** for circumventing DRM protections or infringing on intellectual property rights.
 
 ### ⚠️ No Warranty and Liability
 

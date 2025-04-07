@@ -15,7 +15,7 @@
 To extract Widevine and PlayReady PSSH boxes from an MP4 initialization segment, run the script as follows:
 
 ```bash
-python3 pssh_extractor.py init.mp4
+python3 pypssh.py init.mp4
 ```
 
 The script will output the base64-encoded PSSH boxes for both Widevine and PlayReady (if present).

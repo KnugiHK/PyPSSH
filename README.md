@@ -1,7 +1,6 @@
 # PyPSSH
 
-**PyPSSH** is a lightweight Python tool to extract and base64-encode Widevine and PlayReady PSSH boxes from MP4 initialization segments. It's designed for DRM diagnostics, license server debugging, and media pipeline automation.
-
+**PyPSSH** is a lightweight Python tool to extract and base64-encode Widevine and PlayReady PSSH boxes from MP4 init segments. Useful for DRM system diagnostics, media workflow automation, and security testing and research. 
 ## 🚀 Features
 
 - Extracts Widevine and PlayReady PSSH boxes from MP4 initialization segments.

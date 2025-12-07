@@ -20,6 +20,7 @@ class DRMSystemID:
 class PSSH:
     widevine: Optional[bytes] = None
     playready: Optional[bytes] = None
+    fairplay: Optional[bytes] = None
 
     @classmethod
     def parse(cls, file_path: str | Path) -> 'PSSH':
@@ -59,10 +60,12 @@ class PSSH:
                 widevine_pssh = pssh_box
             elif system_id == DRMSystemID.PLAYREADY:
                 playready_pssh = pssh_box
+            elif system_id == DRMSystemID.FAIRPLAY:
+                fairplay_pssh = pssh_box
 
             offset = init_segment.find(pssh_box) + len(pssh_box)
 
-        return cls(widevine_pssh, playready_pssh)
+        return cls(widevine_pssh, playready_pssh, fairplay_pssh)
 
     def get_widevine_b64(self) -> Optional[str]:
         """Get base64 encoded Widevine PSSH box."""
@@ -71,6 +74,10 @@ class PSSH:
     def get_playready_b64(self) -> Optional[str]:
         """Get base64 encoded PlayReady PSSH box."""
         return base64.b64encode(self.playready).decode('utf-8') if self.playready else None
+
+    def get_fairplay_b64(self) -> Optional[str]:
+        """Get base64 encoded FairPlay PSSH box."""
+        return base64.b64encode(self.fairplay).decode('utf-8') if self.fairplay else None
 
     @staticmethod
     def _find_next_pssh_box(data: bytes, offset: int) -> Optional[bytes]:
@@ -121,6 +128,10 @@ def main():
     
     playready_b64 = pssh.get_playready_b64()
     logger.info(f"PlayReady PSSH: {playready_b64}" if playready_b64 else "No PlayReady PSSH found")
+    logger.info("")
+
+    fairplay_b64 = pssh.get_fairplay_b64()
+    logger.info(f"FairPlay PSSH: {fairplay_b64}" if fairplay_b64 else "No FairPlay PSSH found")
 
 
 if __name__ == "__main__":

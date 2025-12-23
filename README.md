@@ -36,7 +36,7 @@ The script will output the base64-encoded PSSH boxes for both Widevine and PlayR
 You can also import the script as a module and use the `extract_pssh()` function to get the PSSH boxes programmatically. Here's an example of how to use the function in your own Python code:
 
 ```python
-from pssh_extractor import PSSH
+from pypssh import PSSH
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')

@@ -48,6 +48,7 @@ class PSSH:
         """
         widevine_pssh = None
         playready_pssh = None
+        fairplay_pssh = None
         
         offset = 0
         while offset < len(init_segment):

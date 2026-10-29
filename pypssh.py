@@ -8,7 +8,7 @@ import sys
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
+
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class PSSH:
         Returns:
             PSSH object containing the extracted boxes.
         """
-        boxes: Dict[uuid.UUID, bytes] = {}
+        boxes: dict[uuid.UUID, bytes] = {}
         offset = 0
 
         while offset < len(init_segment):
